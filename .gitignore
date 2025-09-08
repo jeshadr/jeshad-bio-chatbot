@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+
+# App artifacts
+index/
+logs.csv
+.streamlit/secrets.toml
+.DS_Store
+
+# Local config
+.env
+.env.*
+!.env.example

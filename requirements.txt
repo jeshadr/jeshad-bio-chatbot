@@ -1,0 +1,6 @@
+streamlit
+faiss-cpu
+pypdf
+python-dotenv
+tiktoken
+openai>=1.40.0
