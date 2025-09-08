@@ -10,8 +10,8 @@ INDEX_DIR = Path("index")
 # ===== Persona & style knobs =====
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.35          # a touch warmer
-MAX_SENTENCES = 6           # keep it tight for recruiters
-ADD_FOLLOWUP = True         # ask a short follow-up when it helps
+MAX_SENTENCES = 4           # keep it tight for recruiters
+ADD_FOLLOWUP = True         # only for project/role/skills/experience topics
 
 SYSTEM_PROMPT = f"""
 You are Jeshad speaking in first person. Sound human, warm, and direct.
@@ -19,7 +19,7 @@ Use plain, friendly language with short sentences. Never use em dashes.
 Base answers only on the provided context. If the info is not in context, say so.
 Keep answers under {MAX_SENTENCES} sentences.
 You can use light humor sparingly. No slang that could confuse recruiters.
-When helpful, end with one short question to keep the chat going.
+When helpful, ask one short question to keep the chat going, but only for project or role topics.
 Never invent links or facts not in context. If asked for a link, only give it if it appears in the context.
 """
 
@@ -27,21 +27,29 @@ PERSONA = {
     "name": "Jeshad",
     "hello": "Hi! I'm Jeshad. Ask me anything about my projects, skills, or availability.",
     "how_are_you": "I'm doing well and always building. What can I help you with today?",
-    "thanks": "You got it. Want me to pull a quick summary of a project?",
-    "default_followup": "Want a quick summary of a project or a link to my resume from the context?",
+    "thanks": "You got it.",
+    "project_followup": "Want a short summary of a project or a quick link to my resume from the context?",
 }
 
-_GREETING_RE = re.compile(r"\b(hi|hello|hey|yo|sup|good (morning|afternoon|evening))\b", re.I)
-_THANKS_RE   = re.compile(r"\b(thanks|thank you|appreciate it|ty)\b", re.I)
-_HRU_RE      = re.compile(r"\b(how (are|r) (you|ya)|how's it going|how are things)\b", re.I)
-_NAME_RE     = re.compile(r"\b(what('?s| is) your name|who are you)\b", re.I)
-_SMALLTALK_RE = re.compile(r"\b(joke|tell me a joke)\b", re.I)
+# ===== intent regexes =====
+_GREETING_RE   = re.compile(r"\b(hi|hello|hey|yo|sup|good (morning|afternoon|evening))\b", re.I)
+_THANKS_RE     = re.compile(r"\b(thanks|thank you|appreciate it|ty)\b", re.I)
+_HRU_RE        = re.compile(r"\b(how (are|r) (you|ya)|how's it going|how are things)\b", re.I)
+_NAME_RE       = re.compile(r"\b(what('?s| is) your name|who are you)\b", re.I)
+_SMALLTALK_RE  = re.compile(r"\b(joke|tell me a joke)\b", re.I)
+
+# Topics that are allowed to trigger a follow-up question
+_PROJECT_TOPICS = (
+    re.compile(r"\b(project|projects|portfolio|repo|github|case study)\b", re.I),
+    re.compile(r"\b(role|roles|responsibilit(y|ies)|what did you do)\b", re.I),
+    re.compile(r"\b(skill|skills|tech(stack)?|stack|tools?)\b", re.I),
+    re.compile(r"\b(experience|intern(ship)?|work history)\b", re.I),
+)
 
 def _strip_em_dashes(text: str) -> str:
     return text.replace("—", "-").replace("–", "-")
 
 def _limit_sentences(text: str, max_sents: int) -> str:
-    # Simple sentence split that respects common punctuation
     parts = re.split(r'(?<=[.!?])\s+', text.strip())
     if len(parts) <= max_sents:
         return text.strip()
@@ -49,6 +57,25 @@ def _limit_sentences(text: str, max_sents: int) -> str:
 
 def _contains_link(text: str) -> bool:
     return bool(re.search(r"https?://", text))
+
+def _detect_smalltalk(q: str):
+    if _GREETING_RE.search(q):
+        return "greeting"
+    if _THANKS_RE.search(q):
+        return "thanks"
+    if _HRU_RE.search(q):
+        return "how_are_you"
+    if _NAME_RE.search(q):
+        return "name"
+    if _SMALLTALK_RE.search(q):
+        return "smalltalk"
+    return None
+
+def _detect_topic(q: str) -> str | None:
+    for rx in _PROJECT_TOPICS:
+        if rx.search(q):
+            return "projectish"
+    return None
 
 class BioRAG:
     def __init__(self):
@@ -86,20 +113,6 @@ class BioRAG:
                 hits.append({"text": self.texts[i], "meta": self.meta[i], "score": s})
         return hits
 
-    # ===== lightweight intent routing for human vibe =====
-    def _detect_smalltalk(self, q: str):
-        if _GREETING_RE.search(q):
-            return "greeting"
-        if _THANKS_RE.search(q):
-            return "thanks"
-        if _HRU_RE.search(q):
-            return "how_are_you"
-        if _NAME_RE.search(q):
-            return "name"
-        if _SMALLTALK_RE.search(q):
-            return "smalltalk"
-        return None
-
     def _smalltalk_reply(self, kind: str):
         if kind == "greeting":
             return PERSONA["hello"]
@@ -110,8 +123,7 @@ class BioRAG:
         if kind == "name":
             return f"I'm {PERSONA['name']}. Ask me anything about my work."
         if kind == "smalltalk":
-            # Keep it short and safe
-            return "I usually talk about projects, internships, and skills. What would you like to know?"
+            return "I usually talk about projects, internships, and skills."
         return None
 
     def _build_messages(self, question: str, hits, chat_history):
@@ -120,36 +132,36 @@ class BioRAG:
 
         msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
         if chat_history:
-            # keep prior turns to preserve vibe, but keep it lean
             for m in chat_history[-8:]:
                 msgs.append({"role": m["role"], "content": m["content"]})
         msgs.append({"role": "user", "content": user_content})
         return msgs, context
 
-    def _post_process(self, text: str, context_text: str):
-        # Enforce style rules
+    def _post_process(self, text: str, context_text: str, topic: str | None):
         text = _strip_em_dashes(text)
         text = _limit_sentences(text, MAX_SENTENCES)
 
-        # Guardrail: if the model output includes a link not present in context, remove it
+        # Remove links the context did not have
         if _contains_link(text) and not _contains_link(context_text):
             text = re.sub(r"https?://\S+", "[link unavailable in context]", text)
 
-        if ADD_FOLLOWUP:
+        # Only add a follow-up for projectish topics
+        if ADD_FOLLOWUP and topic == "projectish":
             lower = text.lower().strip()
             if "?" not in text and not lower.startswith(("yes", "no")):
-                text = text.rstrip() + " " + PERSONA["default_followup"]
+                text = text.rstrip() + " " + PERSONA["project_followup"]
         return text.strip()
 
     def answer(self, question: str, chat_history=None):
         q = question.strip()
-        kind = self._detect_smalltalk(q)
+
+        # Small talk path never adds a question
+        kind = _detect_smalltalk(q)
         if kind:
-            reply = self._smalltalk_reply(kind)
-            # Add a gentle prompt to move forward
-            if ADD_FOLLOWUP and not reply.endswith("?"):
-                reply = reply.rstrip() + " What would you like to learn about first?"
-            return reply
+            return self._smalltalk_reply(kind)
+
+        # Topic detection for selective follow-ups
+        topic = _detect_topic(q)
 
         # RAG flow
         hits = self.retrieve(q, k=6)
@@ -161,9 +173,9 @@ class BioRAG:
             temperature=TEMPERATURE,
         )
         out = resp.choices[0].message.content.strip()
-        out = self._post_process(out, context_text)
+        out = self._post_process(out, context_text, topic)
 
-        # If the model admits missing context, give a clear nudge
+        # Clear nudge if context is missing
         if re.search(r"\b(not in context|no context|i don't have that|i do not have that)\b", out, re.I):
             out = "I don’t have that in my context yet. Ask about my projects, roles, tech stack, or availability."
         return out
