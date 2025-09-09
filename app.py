@@ -1,4 +1,3 @@
-# app.py
 import os
 import sys
 import subprocess
@@ -9,14 +8,19 @@ from dotenv import load_dotenv
 from rag import BioRAG
 
 # ---------- Config ----------
-load_dotenv()  # works locally; Cloud will use st.secrets
-st.set_page_config(page_title="Jeshad Bio Bot", page_icon="🗣️", layout="centered")
+load_dotenv()
+st.set_page_config(page_title="Jeshad Bio Bot", page_icon="🤖", layout="centered")
 
 INDEX_DIR = Path("index")
 BLOCK_TERMS = [
     "social security", "ssn", "home address", "salary history",
-    "political affiliation", "bank account", "credit card"
+    "political affiliation", "bank account", "credit card",
 ]
+GREETING = "Hey there! My name is Jeshad, you can ask me about my projects, experience or just talk with me!"
+
+# Avatars
+ASSISTANT_AVATAR = "assets/jeshad.png"
+USER_AVATAR = "👤"
 
 # ---------- Helpers ----------
 def ensure_index():
@@ -30,10 +34,9 @@ def ensure_index():
 
     with st.spinner("Building index for the first run..."):
         env = os.environ.copy()
-        # On Streamlit Cloud, prefer Secrets
-        if "OPENAI_API_KEY" not in env:
-            if "OPENAI_API_KEY" in st.secrets:
-                env["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+        if "OPENAI_API_KEY" not in env and "OPENAI_API_KEY" in st.secrets:
+            env["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+
         if not env.get("OPENAI_API_KEY"):
             st.error("OPENAI_API_KEY is not set. Add it in Streamlit Secrets.")
             st.stop()
@@ -58,22 +61,21 @@ def blocked(q: str) -> bool:
     ql = q.lower()
     return any(term in ql for term in BLOCK_TERMS)
 
-def print_header():
-    st.title("Jeshad's Interactive Bio")
-    st.caption("Ask about my experience, projects, skills, and availability.")
+def header_with_reset():
+    col1, col2 = st.columns([0.8, 0.2])
+    with col1:
+        st.title("Jeshad's Interactive Bio")
+        st.caption("Learn about my experience, projects, skills, and availability!")
+    with col2:
+        if st.button("🔄 Reset chat", use_container_width=True):
+            st.session_state.pop("chat", None)
+            st.session_state.pop("rag", None)
+            st.rerun()
 
 # ---------- UI ----------
-print_header()
+header_with_reset()
 
-with st.sidebar:
-    st.subheader("Controls")
-    if st.button("Reset chat"):
-        st.session_state.pop("chat", None)
-        st.session_state.pop("rag", None)
-        st.experimental_rerun()
-    st.markdown("Secrets are read from **Streamlit Secrets** in the cloud.")
-
-# Make sure index exists on this machine
+# Ensure index exists here
 ensure_index()
 
 # Load RAG
@@ -84,33 +86,43 @@ except Exception as e:
     st.error(f"Could not load the index: {e}")
     st.stop()
 
-# Session chat history
+# Seed chat
 if "chat" not in st.session_state:
-    st.session_state.chat = []
+    st.session_state.chat = [{"role": "assistant", "content": GREETING}]
 
-# Render history
+# Render history with avatars
 for m in st.session_state.chat:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+    if m["role"] == "assistant":
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
+            st.markdown(m["content"])
+    else:
+        with st.chat_message("user", avatar=USER_AVATAR):
+            st.markdown(m["content"])
 
 # Input
 q = st.chat_input("Ask me anything")
 if q:
-    # Basic guardrails
+    st.session_state.chat.append({"role": "user", "content": q})
+    with st.chat_message("user", avatar=USER_AVATAR):
+        st.markdown(q)
+
     if blocked(q):
         msg = "I do not share that. You can ask about my skills, projects, timeline, or availability."
-        st.session_state.chat.append({"role": "user", "content": q})
-        with st.chat_message("user"):
-            st.markdown(q)
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
             st.markdown(msg)
         st.session_state.chat.append({"role": "assistant", "content": msg})
     else:
-        st.session_state.chat.append({"role": "user", "content": q})
-        with st.chat_message("user"):
-            st.markdown(q)
-
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
             a = st.session_state.rag.answer(q, chat_history=st.session_state.chat)
             st.markdown(a)
-            st.session_state.chat.append({"role": "assistant", "content": a})
+        st.session_state.chat.append({"role": "assistant", "content": a})
+
+# ---------- Disclaimer ----------
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; font-size: 14px; color: gray;'>"
+    "⚠️ Some information may be inaccurate. For the most up to date details, please visit my "
+    "<a href='https://jeshadr.com' target='_blank'>portfolio at jeshadr.com</a>."
+    "</div>",
+    unsafe_allow_html=True,
+)

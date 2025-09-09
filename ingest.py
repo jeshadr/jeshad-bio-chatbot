@@ -1,10 +1,9 @@
-# ingest.py
 import os, re, json, sys
 from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 
-# Lightweight PDF text extraction
+# PDF text extraction
 from pypdf import PdfReader
 from openai import OpenAI
 import faiss
@@ -16,10 +15,9 @@ DATA_DIR = Path("data")
 INDEX_DIR = Path("index")
 INDEX_DIR.mkdir(exist_ok=True)
 
-# Safety caps so you don't hang
 PDF_MAX_PAGES = 25          # stop after N pages per PDF
 MAX_CHARS_PER_FILE = 120_000  # skip anything larger
-CHUNK_SIZE = 1400           # ~1k–1.5k chars works fine
+CHUNK_SIZE = 1400           # ~1k–1.5k chars
 CHUNK_OVERLAP = 220
 EMBED_MODEL = "text-embedding-3-small"
 BATCH_SIZE = 64

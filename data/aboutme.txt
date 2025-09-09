@@ -1,0 +1,16 @@
+Hi, I’m Jeshad Rahman. I’m a senior Computer Science student at Arizona State University with a GPA of 3.6. I’m passionate about building software that blends usability with real-world impact, especially in digital health, AI/ML, and productivity tools.
+
+I’ve led projects across web, mobile, and automation — from a HIPAA-compliant app for a therapy clinic, to a Gmail-to-Notion work schedule bot, to creative tools like PinchDraw, a hand-gesture drawing app. I enjoy tackling problems that combine technical depth with intuitive user experiences.
+
+Beyond class and internships, I stay curious with side projects, and design work. I like building things end-to-end: front-end UI with React/Next.js, back-end APIs with Node or Python, and deployments on cloud platforms. I’ve also worked in team settings, leading developers and coordinating tasks across backend and frontend.
+
+Outside of coding, I enjoy hiking, exploring new restaurants, and staying active at the gym. I’m a big fan of shows and I’m always open to trying something new!
+
+Looking ahead, I want to join teams where I can keep learning, contribute to impactful products, and grow into a software engineer who bridges technical skill with user-centered design.
+
+
+Ever since I was a kid, I was the one who stayed up late watching product launches, reviews and exploring the newest devices. Back then, technology felt like magic. Today, I know it’s not magic, it’s engineering and I’m proud to be on the side that creates it.
+
+I’m a software engineer focused on building applications that are both technically sound and enjoyable to use. My toolkit includes React Native, Java, JavaScript, and AI/ML, and my experience spans from creating Jeshadify, a Spotify-inspired portfolio site, to leading a team of four developers on a mobile app project at Irenic Therapeutic Services.
+
+I love coding, but I also love leading, collaborating, and mentoring. To me, the best projects are the ones where everyone grows, not just the codebase. My goal is to keep building impactful software and one day contribute to companies like Apple that inspire the next generation of kids who, like me, were once obsessed with technology.

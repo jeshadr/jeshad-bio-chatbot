@@ -1,0 +1,65 @@
+{
+    Project: "Jeshadify",
+    Description: "A Spotify-inspired portfolio showcasing my work, tech stack, and resume. You are able to view everything in a familiar layout.
+    On Mobile there is a special Music Player screen.",
+    Stack: Next.js, React, JavaScript, Tailwind, TypeScript.
+    What I Learned: "From this project I learned the fundamentals of designing and building a modern website from scratch.
+    I gained experience coding responsive front-end interfaces with a focus on UI/UX best practices, and I saw first-hand how important it is to make sites work smoothly across different screen sizes and devices.
+    Working with Next.js and React taught me how to structure components effectively, manage state, and optimize performance.
+    I also picked up skills in styling with Tailwind, using TypeScript for type safety, and thinking about accessibility so that the portfolio is usable by a wider audience.
+    This project gave me confidence in translating a creative idea into a functional product and reinforced the value of clear design systems and consistency."
+    GitHub Link: "https://github.com/jeshadr/jeshad-portfolio",
+  },
+  {
+    Project: "PinchDraw",
+    Description: "The Real-time Camera Pinch Draw App is a browser-based tool that lets you draw directly on a live camera feed using only your hand gestures.
+    It uses your device’s camera and real-time hand tracking to detect when you pinch your thumb and index finger together — starting a brush stroke. Opening your hand stops drawing.
+    The camera feed is mirrored like a selfie for a natural, intuitive experience.",
+    Stack: JavaScript, HTML, CSS.
+    What I learned: "I underestimated how hard real time hand and movement tracking is. I learned to work with MediaPipe hand landmarks, tune pinch thresholds, smooth jitter, and map
+    normalized coordinates into canvas space while keeping the camera feed mirrored for a natural feel. I had to handle camera permissions, secure context requirements over HTTPS. I
+    optimized performance with separate overlay and paint canvases, requestAnimationFrame, device-pixel-ratio
+    scaling, and transparent UI so the camera view stays clean. I built undo and redo with lightweight history snapshots, added save to PNG, and kept the UI responsive under load. I also
+    added a fallback tracker for older browsers, defensive error handling for common camera failures, and quick diagnostics to validate sensitivity and smoothing. This project taught me to
+    measure latency, iterate on interaction details, and ship a simple gesture that feels intuitive in real time."
+    GitHub Link: "https://github.com/jeshadr/PinchDraw",
+  },
+  {
+    Project: "Work Schedule Bot",
+    Description: "Automates your weekly or biweekly workflow: pulls your work schedule from Gmail, parses the shifts you care about,
+    and writes clean entries into a Notion database. Runs locally or with GitHub Actions on a schedule.",
+    Stack: Python, API, OAuth2.
+    What I Learned: "I learned how to connect real world email data to an automated workflow. I implemented OAuth2 with least-privileged Gmail scopes, handled
+    token refresh reliably, and parsed messy HTML emails into clean shift objects. I built idempotency so reruns do not duplicate entries, mapped fields to a
+    Notion database, and dealt with pagination, rate limits, and backoff. I scheduled runs locally and with GitHub Actions, handled time zones and date math for
+    weekly and biweekly cycles, and made cron settings readable. I added structured logging, secrets via .env and CI secrets, and defensive error handling so failures
+    are visible and recoverable. I also wrote fixtures to unit test the parser against edge cases, which made the bot stable across format changes."
+    GitHub Link: "https://github.com/jeshadr/work-schedule-bot",
+  },
+  {
+    Project: "Daves Calorie Calc",
+    Description: "A mobile-first web app that helps users estimate the total calories and price of their meal at Dave’s Hot Chicken.
+    Built with ASP.NET Web Forms, this calorie calculator provides an interactive menu, spice-level selection, and a dynamic cart system for easy meal tracking.",
+    Stack: ASP.NET, JavaScript, Azure, HTML, CSS.
+    What I Learned: "I learned how to design a mobile-first experience with ASP.NET Web Forms and make it feel smooth on phones and desktops.
+    I built interactive UI with JavaScript for menu selections, spice-level toggles, and a dynamic cart, and styled everything cleanly with CSS.
+    I connected the app to Azure for hosting and deployment, and picked up best practices for state management inside Web Forms.
+    I realized how much thought goes into simple UX details like responsive layout, input validation, and recalculating totals without lag.
+    This project gave me confidence in mixing .NET backends with front-end interactivity and shipping something a friend could use on their phone."
+    Website Link: https://davescaloriecalculator.com
+    GitHub Link: "https://github.com/jeshadr/DavesCalorieCalculator",
+  },
+  {
+    Project: "Breast Cancer Prediction",
+    Description: "Machine learning model achieving 96.5% accuracy on tumor classification. Uses the Breast Cancer Wisconsin (Diagnostic) Dataset to
+    predict whether a tumor is benign or malignant based on measurements of cell nuclei from digitized fine needle aspirate (FNA) images.",
+    Stack: Python, Scikit-learn, Pandas, Kaggle.
+    What I Learned: "I learned to work through the full ML pipeline from dataset exploration to deployment.
+    I used Pandas to clean and preprocess the Breast Cancer Wisconsin data, engineered features, and split training and test sets fairly.
+    I trained and tuned scikit-learn classifiers, compared performance, and landed on a model that reached 96.5% accuracy.
+    I practiced cross-validation, learned to spot overfitting, and used metrics beyond accuracy like precision and recall.
+    I also documented the workflow and published it to Kaggle, which taught me how to present results reproducibly.
+    This gave me a stronger foundation in model evaluation and a sense of where ML shines and where it can mislead if you do not validate properly."
+
+    GitHub Link: "https://github.com/jeshadr/MachineLearningModel",
+  },
