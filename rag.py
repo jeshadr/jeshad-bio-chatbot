@@ -4,8 +4,12 @@ from pathlib import Path
 import faiss, numpy as np
 from openai import OpenAI
 
+# ---------- Paths ----------
+DATA_DIR = Path("data")
+PROJECTS_DIR = DATA_DIR / "projects"
 INDEX_DIR = Path("index")
 
+# ---------- Model + style ----------
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.6
 MAX_SENTENCES = 6
@@ -36,7 +40,7 @@ BOT_META_TRIGGERS = [
 
 PROJECT_TRIGGERS = [
     "projects", "show projects", "your projects", "portfolio projects",
-    "project list", "repos", "github projects", "github repos"
+    "project list", "repos", "github projects", "github repos", "list of projects", "all of them", "all projects"
 ]
 
 URL_RE = re.compile(r"https?://[^\s)>\]]+", re.IGNORECASE)
@@ -51,11 +55,13 @@ class BioRAG:
         self.texts, self.meta = self._load_meta(meta_path)
         self.index = faiss.read_index(str(index_path))
 
+    # ---------- Index IO ----------
     def _load_meta(self, path: Path):
         raw = path.read_text(encoding="utf-8", errors="strict")
         obj = json.loads(raw)
         return obj["texts"], obj["meta"]
 
+    # ---------- Embedding + Retrieval ----------
     def embed_query(self, q: str):
         vec = self.client.embeddings.create(
             model="text-embedding-3-small",
@@ -65,7 +71,7 @@ class BioRAG:
         faiss.normalize_L2(vec)
         return vec
 
-    def retrieve(self, q: str, k=4):
+    def retrieve(self, q: str, k=6):
         qv = self.embed_query(q)
         scores, idxs = self.index.search(qv, k)
         idxs = idxs[0].tolist()
@@ -75,6 +81,7 @@ class BioRAG:
                 hits.append({"text": self.texts[i], "meta": self.meta[i]})
         return hits
 
+    # ---------- Modes ----------
     def _detect_mode(self, question: str):
         q = question.lower().strip()
         if q in SMALL_TALK or "how are you" in q:
@@ -95,20 +102,99 @@ class BioRAG:
             {"role": "assistant", "content": "This is my interactive bio. Ask about my projects, stack, or availability and I’ll answer in my voice using facts from my files."},
         ]
 
-    def _gather_links(self, hits):
-        links = []
-        for h in hits:
-            for m in URL_RE.findall(h["text"]):
-                links.append(m.strip().rstrip(").,]"))
-        # de-dupe while preserving order
-        seen = set()
-        out = []
-        for u in links:
-            if u not in seen:
-                seen.add(u)
-                out.append(u)
-        return out
+    # ---------- Project parsing (deterministic) ----------
+    def _read_text_file(self, p: Path) -> str:
+        try:
+            return p.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            return ""
 
+    def _normalize(self, s: str) -> str:
+        # normalize smart quotes and whitespace
+        s = s.replace("—", "-").replace("–", "-").replace("’", "'").replace("“", '"').replace("”", '"')
+        s = re.sub(r"\r\n?", "\n", s)
+        return s
+
+    def _scan_all_project_texts(self):
+        texts = []
+        if PROJECTS_DIR.exists():
+            for p in sorted(PROJECTS_DIR.glob("*.txt")):
+                t = self._read_text_file(p)
+                if t:
+                    texts.append(t)
+        return texts
+
+    def _extract_projects_from_text(self, text: str):
+        text = self._normalize(text)
+        items = []
+
+        # One block per file, so just read keys
+        m_name = re.search(r'^\s*Project\s*:\s*"?(.*?)"?\s*$', text, flags=re.IGNORECASE | re.MULTILINE)
+        if not m_name:
+            return items
+        name = m_name.group(1).strip()
+
+        m_desc = re.search(
+            r'Description\s*:\s*(.+?)(?=\n\s*(Stack|What I Learned|What I learned|GitHub Link|Website Link)\s*:|\Z)',
+            text, flags=re.IGNORECASE | re.DOTALL
+        )
+        desc = ""
+        if m_desc:
+            desc = re.sub(r"\s+", " ", m_desc.group(1).strip())
+            parts = re.split(r"(?<=[.!?])\s+", desc)
+            desc = " ".join(parts[:2]).strip()
+
+        website = None
+        github = None
+        m_site = re.search(r'Website\s*Link\s*:\s*(https?://[^\s)>\]]+)', text, flags=re.IGNORECASE)
+        if m_site:
+            website = m_site.group(1).strip().rstrip(").,]")
+
+        m_git = re.search(r'(GitHub\s*Link|GitHub)\s*:\s*(https?://[^\s)>\]]+)', text, flags=re.IGNORECASE)
+        if m_git:
+            github = m_git.group(2).strip().rstrip(").,]")
+
+        items.append({"name": name, "desc": desc, "website": website, "github": github})
+        return items
+
+    def _extract_all_projects(self, hits=None, max_items=20):
+        # Prefer deterministic file scan to avoid retrieval misses
+        projects = []
+        for t in self._scan_all_project_texts():
+            projects.extend(self._extract_projects_from_text(t))
+
+        # If nothing found in files, try to parse from retrieved hits as fallback
+        if not projects and hits:
+            for h in hits:
+                projects.extend(self._extract_projects_from_text(h["text"]))
+
+        # De-dupe by name
+        seen = set()
+        unique = []
+        for p in projects:
+            key = p["name"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(p)
+        return unique[:max_items]
+
+    def _render_projects_markdown(self, items):
+        # Proper Markdown formatting
+        lines = ["Here are some of my projects:", ""]
+        for i, p in enumerate(items, 1):
+            title = p["name"]
+            desc = p["desc"]
+            links = []
+            if p["website"]:
+                links.append(f"[Website]({p['website']})")
+            if p["github"]:
+                links.append(f"[GitHub]({p['github']})")
+            link_str = " " + " · ".join(links) if links else ""
+            lines.append(f"{i}. **{title}** - {desc}{link_str}")
+        return "\n".join(lines)
+
+    # ---------- General LLM plumbing ----------
     def _build_messages(self, question: str, hits, chat_history, mode: str):
         base_context = f"App:\n{APP_CONTEXT.strip()}\n"
         docs_context = "\n\n".join(h["text"] for h in hits)
@@ -123,8 +209,6 @@ class BioRAG:
             style_hint = "Greet briefly, then invite a job-related question."
         elif mode == "bot_meta":
             style_hint = "Explain what this app is and what the user can ask. Keep it short and helpful."
-        elif mode == "projects":
-            style_hint = "Return a short list of projects and include a working link for each one that appears in the context. Do not invent links."
 
         msgs = [{"role": "system", "content": VOICE_GUIDE}]
         msgs.extend(self._few_shots())
@@ -137,42 +221,31 @@ class BioRAG:
         })
         return msgs
 
-    def _post_process(self, text: str, mode: str, links_from_hits=None):
+    def _post_process(self, text: str, mode: str):
         text = text.replace("—", "-").strip()
-
-        # If user asked for projects, ensure at least one link is present if we have them
-        if mode == "projects" and links_from_hits:
-            has_link = "http://" in text or "https://" in text
-            if not has_link:
-                # Append a compact links section
-                top = links_from_hits[:5]
-                lines = "\n".join(f"- {u}" for u in top)
-                text = f"{text}\n\nLinks:\n{lines}"
-
-        # Keep responses tight unless list mode
-        if mode not in {"list", "projects"}:
+        if mode != "list":
             parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+", text) if p.strip()]
             if len(parts) > MAX_SENTENCES:
                 text = " ".join(parts[:MAX_SENTENCES])
         return text
 
+    # ---------- Public API ----------
     def answer(self, question: str, chat_history=None):
         mode = self._detect_mode(question)
-        hits = self.retrieve(question, k=4)
-        links = self._gather_links(hits)
+
+        # Special case: list all projects deterministically from files
+        if mode == "projects":
+            items = self._extract_all_projects()
+            if items:
+                return self._render_projects_markdown(items)
+            # If somehow no files were parsed, fall back to retrieval+LLM
+
+        hits = self.retrieve(question, k=6)
         messages = self._build_messages(question, hits, chat_history, mode)
-
-        # Bias the model by showing links when relevant via the user content context
-        if mode == "projects" and links:
-            messages.append({
-                "role": "user",
-                "content": "These links were found in the sources. Use them directly if you reference the corresponding projects:\n" + "\n".join(links[:8])
-            })
-
         resp = self.client.chat.completions.create(
             model=MODEL,
             messages=messages,
             temperature=TEMPERATURE,
         )
         out = resp.choices[0].message.content or ""
-        return self._post_process(out, mode, links_from_hits=links)
+        return self._post_process(out, mode)

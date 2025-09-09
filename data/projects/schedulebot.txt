@@ -1,0 +1,10 @@
+Project: Work Schedule Bot
+Description: Automates your weekly or biweekly workflow: pulls your work schedule from Gmail, parses the shifts you care about,
+and writes clean entries into a Notion database. Runs locally or with GitHub Actions on a schedule.
+Stack: Python, API, OAuth2.
+GitHub Link: https://github.com/jeshadr/work-schedule-bot
+What I Learned: I learned how to connect real world email data to an automated workflow. I implemented OAuth2 with least-privileged Gmail scopes, handled
+token refresh reliably, and parsed messy HTML emails into clean shift objects. I built idempotency so reruns do not duplicate entries, mapped fields to a
+Notion database, and dealt with pagination, rate limits, and backoff. I scheduled runs locally and with GitHub Actions, handled time zones and date math for
+weekly and biweekly cycles, and made cron settings readable. I added structured logging, secrets via .env and CI secrets, and defensive error handling so failures
+are visible and recoverable. I also wrote fixtures to unit test the parser against edge cases, which made the bot stable across format changes.

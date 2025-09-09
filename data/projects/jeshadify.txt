@@ -1,0 +1,11 @@
+Project: Jeshadify
+Description: A Spotify-inspired portfolio showcasing my work, tech stack, and resume. You are able to view everything in a familiar layout.
+On Mobile there is a special Music Player screen.
+Stack: Next.js, React, JavaScript, Tailwind, TypeScript.
+GitHub Link: https://github.com/jeshadr/jeshad-portfolio
+Website Link: https://www.jeshadr.com/
+What I Learned: From this project I learned the fundamentals of designing and building a modern website from scratch.
+I gained experience coding responsive front-end interfaces with a focus on UI/UX best practices, and I saw first-hand how important it is to make sites work smoothly across different screen sizes and devices.
+Working with Next.js and React taught me how to structure components effectively, manage state, and optimize performance.
+I also picked up skills in styling with Tailwind, using TypeScript for type safety, and thinking about accessibility so that the portfolio is usable by a wider audience.
+This project gave me confidence in translating a creative idea into a functional product and reinforced the value of clear design systems and consistency.

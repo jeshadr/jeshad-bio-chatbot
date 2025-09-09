@@ -1,0 +1,11 @@
+Project: Daves Calorie Calculator
+Description: A mobile-first web app that helps users estimate the total calories and price of their meal at Dave’s Hot Chicken.
+Built with ASP.NET Web Forms, this calorie calculator provides an interactive menu, spice-level selection, and a dynamic cart system for easy meal tracking.
+Stack: ASP.NET, JavaScript, Azure, HTML, CSS
+GitHub Link: https://github.com/jeshadr/DavesCalorieCalculator
+Website Link: https://davescaloriecalculator.com
+What I Learned: I learned how to design a mobile-first experience with ASP.NET Web Forms and make it feel smooth on phones and desktops.
+I built interactive UI with JavaScript for menu selections, spice-level toggles, and a dynamic cart, and styled everything cleanly with CSS.
+I connected the app to Azure for hosting and deployment, and picked up best practices for state management inside Web Forms.
+I realized how much thought goes into simple UX details like responsive layout, input validation, and recalculating totals without lag.
+This project gave me confidence in mixing .NET backends with front-end interactivity and shipping something a friend could use on their phone.

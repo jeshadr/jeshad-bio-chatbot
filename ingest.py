@@ -15,12 +15,14 @@ DATA_DIR = Path("data")
 INDEX_DIR = Path("index")
 INDEX_DIR.mkdir(exist_ok=True)
 
-PDF_MAX_PAGES = 25          # stop after N pages per PDF
-MAX_CHARS_PER_FILE = 120_000  # skip anything larger
-CHUNK_SIZE = 1400           # ~1k–1.5k chars
+PDF_MAX_PAGES = 25             # stop after N pages per PDF
+MAX_CHARS_PER_FILE = 120_000   # skip anything larger
+CHUNK_SIZE = 1400              # ~1k–1.5k chars
 CHUNK_OVERLAP = 220
 EMBED_MODEL = "text-embedding-3-small"
 BATCH_SIZE = 64
+
+ALLOWED_SUFFIXES = {".txt", ".md", ".pdf"}   # add more if needed
 
 def log(msg: str):
     print(msg, flush=True)
@@ -86,7 +88,7 @@ def chunk_chars(text: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
             prev = overlapped[-1]
             tail = prev[-overlap:] if len(prev) > overlap else prev
             merged = tail + "\n" + b
-            overlapped[-1] = prev  # keep previous
+            overlapped[-1] = prev
             overlapped.append(merged[: size + overlap])
         return overlapped
     return blocks
@@ -113,31 +115,43 @@ def main():
     corpus = []
     meta = []
 
-    files = sorted([p for p in DATA_DIR.glob("*") if p.is_file()])
-    if not files:
-        log("[INFO] No files found in data/. Add resume.pdf, faq.txt, etc.")
+    if not DATA_DIR.exists():
+        log("[INFO] data/ folder not found.")
         sys.exit(0)
 
-    log(f"[INFO] Found {len(files)} file(s) in data/: {[p.name for p in files]}")
+    # Recurse into data/ and its subfolders, including data/projects/
+    files = sorted(
+        [p for p in DATA_DIR.rglob("*")
+         if p.is_file() and p.suffix.lower() in ALLOWED_SUFFIXES]
+    )
+
+    if not files:
+        log("[INFO] No supported files found in data/. Add resume.pdf, aboutme.txt, projects/*.txt, etc.")
+        sys.exit(0)
+
+    # Show relative paths in logs
+    rel_names = [p.relative_to(DATA_DIR).as_posix() for p in files]
+    log(f"[INFO] Found {len(files)} file(s) under data/: {rel_names}")
 
     for p in files:
         raw = read_file(p)
         raw = normalize_whitespace(raw)
 
         if not raw:
-            log(f"[WARN] {p.name} produced no text. Skipping.")
+            log(f"[WARN] {p} produced no text. Skipping.")
             continue
 
         if len(raw) > MAX_CHARS_PER_FILE:
-            log(f"[WARN] {p.name} exceeds {MAX_CHARS_PER_FILE} chars. Truncating.")
+            log(f"[WARN] {p} exceeds {MAX_CHARS_PER_FILE} chars. Truncating.")
             raw = raw[:MAX_CHARS_PER_FILE] + "\n[Truncated]"
 
         chunks = chunk_chars(raw)
-        log(f"[INFO] {p.name}: {len(chunks)} chunks")
+        log(f"[INFO] {p.relative_to(DATA_DIR).as_posix()}: {len(chunks)} chunks")
 
+        rel = p.relative_to(DATA_DIR).as_posix()
         for i, ch in enumerate(chunks):
             corpus.append(ch)
-            meta.append({"file": p.name, "chunk": i})
+            meta.append({"file": rel, "chunk": i})
 
     if not corpus:
         log("[INFO] Nothing to embed.")

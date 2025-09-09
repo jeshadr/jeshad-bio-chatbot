@@ -1,0 +1,11 @@
+Project: Breast Cancer Prediction
+Description: Machine learning model achieving 96.5% accuracy on tumor classification. Uses the Breast Cancer Wisconsin (Diagnostic) Dataset to
+predict whether a tumor is benign or malignant based on measurements of cell nuclei from digitized fine needle aspirate (FNA) images.
+Stack: Python, Scikit-learn, Pandas, Kaggle
+GitHub Link: https://github.com/jeshadr/MachineLearningModel
+What I Learned: I learned to work through the full ML pipeline from dataset exploration to deployment.
+I used Pandas to clean and preprocess the Breast Cancer Wisconsin data, engineered features, and split training and test sets fairly.
+I trained and tuned scikit-learn classifiers, compared performance, and landed on a model that reached 96.5% accuracy.
+I practiced cross-validation, learned to spot overfitting, and used metrics beyond accuracy like precision and recall.
+I also documented the workflow and published it to Kaggle, which taught me how to present results reproducibly.
+This gave me a stronger foundation in model evaluation and a sense of where ML shines and where it can mislead if you do not validate properly.

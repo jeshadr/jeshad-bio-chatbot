@@ -1,0 +1,12 @@
+Project: PinchDraw
+Description: The Real-time Camera Pinch Draw App is a browser-based tool that lets you draw directly on a live camera feed using only your hand gestures.
+It uses your device’s camera and real-time hand tracking to detect when you pinch your thumb and index finger together — starting a brush stroke. Opening your hand stops drawing.
+The camera feed is mirrored like a selfie for a natural, intuitive experience.
+Stack: JavaScript, HTML, CSS
+GitHub Link: https://github.com/jeshadr/PinchDraw
+What I learned: I underestimated how hard real time hand and movement tracking is. I learned to work with MediaPipe hand landmarks, tune pinch thresholds, smooth jitter, and map
+normalized coordinates into canvas space while keeping the camera feed mirrored for a natural feel. I had to handle camera permissions, secure context requirements over HTTPS. I
+optimized performance with separate overlay and paint canvases, requestAnimationFrame, device-pixel-ratio
+scaling, and transparent UI so the camera view stays clean. I built undo and redo with lightweight history snapshots, added save to PNG, and kept the UI responsive under load. I also
+added a fallback tracker for older browsers, defensive error handling for common camera failures, and quick diagnostics to validate sensitivity and smoothing. This project taught me to
+measure latency, iterate on interaction details, and ship a simple gesture that feels intuitive in real time.
