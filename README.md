@@ -27,14 +27,10 @@ Built with **Python, Streamlit, OpenAI, and FAISS (RAG)**.
 
 ## 📸 Screenshots
 
-### Home Page
-![Home Page](https://gyazo.com/9ca74544dba971eedb3d39c393da5a2e.png)
+![First Page](https://gyazo.com/122a65a8d03ab32ebc3bc4e8bec4aec9.png)
 
-### Tech Stack
-![Tech Stack](https://gyazo.com/b2d78d3b7c02d88cdf8067dee1f1d38f.png)
+![Who are you](https://gyazo.com/9299df4382d09e75d6c46f96ca4c9a9e.png)
 
-### Projects
-![Projects](https://gyazo.com/d0e54c1d923dabdf97b66ae3e209b807.png)
+![Projects](https://gyazo.com/91beb4810eedc70e9c33d7c82f92ed78.png)
 
-### Contact Me
-![Contact Me](https://gyazo.com/a06d8303ffa18ddcfb4ddb7f0fb7bce5.png)
+![Tell Me more](https://gyazo.com/2e8839f886dba41b4e4718169c53ef1e.png)
